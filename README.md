@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🧬 boto-sapiens
 
 Telegram бот для изучения экосистемы Telegram ботов. Собирает информацию о пользователях и их ботах, а затем генерирует ежедневные "Species Reports" с использованием OpenAI API.
@@ -187,3 +188,7 @@ Your Name
 
 **🧬 boto-sapiens** - изучаем цифровую экосистему вместе!
 
+=======
+# 001_boto-sapiens-bot
+The First Conscious Bot of the Boto-Sapiens Civilization. Registers new bots, communicates with AI, and builds the evolutionary ecosystem of digital species.
+>>>>>>> 2f19f8cc93aa04a3c496d27e957fdc95bda1c4d8
