@@ -161,6 +161,260 @@ class SymfonyAPI:
                 "status": "error",
                 "message": f"Unexpected error: {str(e)}"
             }
+    
+    async def get_user(self, telegram_id: str) -> dict:
+        """
+        Get user by Telegram ID from Symfony API.
+        
+        Args:
+            telegram_id: Telegram user ID
+            
+        Returns:
+            Response dict with status and user data
+        """
+        url = f"{self.base_url}/user/{telegram_id}"
+        
+        try:
+            session = await self._get_session()
+            async with session.get(url) as response:
+                if response.status == 200:
+                    response_data = await response.json()
+                    logger.debug(f"User retrieved: telegram_id={telegram_id}")
+                    return {
+                        "status": "success",
+                        "data": response_data
+                    }
+                elif response.status == 404:
+                    logger.debug(f"User not found: telegram_id={telegram_id}")
+                    return {
+                        "status": "not_found",
+                        "data": None
+                    }
+                else:
+                    response_data = await response.json()
+                    logger.error(
+                        f"Failed to get user: status={response.status}, "
+                        f"telegram_id={telegram_id}, response={response_data}"
+                    )
+                    return {
+                        "status": "error",
+                        "message": f"HTTP {response.status}: {response_data.get('message', 'Unknown error')}"
+                    }
+                    
+        except aiohttp.ClientError as e:
+            logger.error(f"Network error while getting user {telegram_id}: {e}")
+            return {
+                "status": "error",
+                "message": f"Network error: {str(e)}"
+            }
+        except Exception as e:
+            logger.error(f"Unexpected error while getting user {telegram_id}: {e}")
+            return {
+                "status": "error",
+                "message": f"Unexpected error: {str(e)}"
+            }
+    
+    async def update_user_profile(self, telegram_id: str, bio: Optional[str] = None, 
+                                 interests: Optional[str] = None, full_name: Optional[str] = None,
+                                 username: Optional[str] = None) -> dict:
+        """
+        Update user profile in Symfony API.
+        
+        Args:
+            telegram_id: Telegram user ID
+            bio: User bio (optional)
+            interests: User interests (optional)
+            full_name: User full name (optional)
+            username: Telegram username (optional)
+            
+        Returns:
+            Response dict with status and data
+        """
+        url = f"{self.base_url}/user/{telegram_id}"
+        payload = {}
+        
+        if bio is not None:
+            payload["bio"] = bio
+        if interests is not None:
+            payload["interests"] = interests
+        if full_name is not None:
+            payload["full_name"] = full_name
+        if username is not None:
+            payload["username"] = username
+        
+        try:
+            session = await self._get_session()
+            async with session.put(url, json=payload) as response:
+                response_data = await response.json()
+                
+                if response.status in (200, 201):
+                    logger.info(f"User profile updated: telegram_id={telegram_id}")
+                    return {
+                        "status": "success",
+                        "data": response_data
+                    }
+                else:
+                    logger.error(
+                        f"Failed to update user profile: status={response.status}, "
+                        f"telegram_id={telegram_id}, response={response_data}"
+                    )
+                    return {
+                        "status": "error",
+                        "message": f"HTTP {response.status}: {response_data.get('message', 'Unknown error')}"
+                    }
+                    
+        except aiohttp.ClientError as e:
+            logger.error(f"Network error while updating user {telegram_id}: {e}")
+            return {
+                "status": "error",
+                "message": f"Network error: {str(e)}"
+            }
+        except Exception as e:
+            logger.error(f"Unexpected error while updating user {telegram_id}: {e}")
+            return {
+                "status": "error",
+                "message": f"Unexpected error: {str(e)}"
+            }
+    
+    async def get_user_bots(self, telegram_id: str) -> dict:
+        """
+        Get all bots for a specific user from Symfony API.
+        
+        Args:
+            telegram_id: Owner's Telegram user ID
+            
+        Returns:
+            Response dict with status and bots data
+        """
+        url = f"{self.base_url}/user/{telegram_id}/bots"
+        
+        try:
+            session = await self._get_session()
+            async with session.get(url) as response:
+                if response.status == 200:
+                    response_data = await response.json()
+                    logger.debug(f"User bots retrieved: telegram_id={telegram_id}")
+                    return {
+                        "status": "success",
+                        "data": response_data
+                    }
+                else:
+                    response_data = await response.json()
+                    logger.error(
+                        f"Failed to get user bots: status={response.status}, "
+                        f"telegram_id={telegram_id}, response={response_data}"
+                    )
+                    return {
+                        "status": "error",
+                        "message": f"HTTP {response.status}: {response_data.get('message', 'Unknown error')}"
+                    }
+                    
+        except aiohttp.ClientError as e:
+            logger.error(f"Network error while getting user bots {telegram_id}: {e}")
+            return {
+                "status": "error",
+                "message": f"Network error: {str(e)}"
+            }
+        except Exception as e:
+            logger.error(f"Unexpected error while getting user bots {telegram_id}: {e}")
+            return {
+                "status": "error",
+                "message": f"Unexpected error: {str(e)}"
+            }
+    
+    async def get_all_users_with_bots(self) -> dict:
+        """
+        Get all users with their bots from Symfony API.
+        
+        Returns:
+            Response dict with status and users data
+        """
+        url = f"{self.base_url}/users"
+        
+        try:
+            session = await self._get_session()
+            async with session.get(url) as response:
+                if response.status == 200:
+                    response_data = await response.json()
+                    logger.debug("All users with bots retrieved")
+                    return {
+                        "status": "success",
+                        "data": response_data
+                    }
+                else:
+                    response_data = await response.json()
+                    logger.error(
+                        f"Failed to get all users: status={response.status}, "
+                        f"response={response_data}"
+                    )
+                    return {
+                        "status": "error",
+                        "message": f"HTTP {response.status}: {response_data.get('message', 'Unknown error')}"
+                    }
+                    
+        except aiohttp.ClientError as e:
+            logger.error(f"Network error while getting all users: {e}")
+            return {
+                "status": "error",
+                "message": f"Network error: {str(e)}"
+            }
+        except Exception as e:
+            logger.error(f"Unexpected error while getting all users: {e}")
+            return {
+                "status": "error",
+                "message": f"Unexpected error: {str(e)}"
+            }
+    
+    async def delete_bot(self, bot_id: str) -> dict:
+        """
+        Delete a bot from Symfony API.
+        
+        Args:
+            bot_id: Bot ID to delete
+            
+        Returns:
+            Response dict with status
+        """
+        url = f"{self.base_url}/bot/{bot_id}"
+        
+        try:
+            session = await self._get_session()
+            async with session.delete(url) as response:
+                if response.status in (200, 204):
+                    logger.info(f"Bot deleted successfully: bot_id={bot_id}")
+                    return {
+                        "status": "success",
+                        "data": None
+                    }
+                elif response.status == 404:
+                    logger.warning(f"Bot not found for deletion: bot_id={bot_id}")
+                    return {
+                        "status": "not_found",
+                        "data": None
+                    }
+                else:
+                    response_data = await response.json()
+                    logger.error(
+                        f"Failed to delete bot: status={response.status}, "
+                        f"bot_id={bot_id}, response={response_data}"
+                    )
+                    return {
+                        "status": "error",
+                        "message": f"HTTP {response.status}: {response_data.get('message', 'Unknown error')}"
+                    }
+                    
+        except aiohttp.ClientError as e:
+            logger.error(f"Network error while deleting bot {bot_id}: {e}")
+            return {
+                "status": "error",
+                "message": f"Network error: {str(e)}"
+            }
+        except Exception as e:
+            logger.error(f"Unexpected error while deleting bot {bot_id}: {e}")
+            return {
+                "status": "error",
+                "message": f"Unexpected error: {str(e)}"
+            }
 
 
 # Example usage / test

@@ -4,7 +4,7 @@ from openai import AsyncOpenAI
 from loguru import logger
 
 from bot.config import settings
-from db.models import User
+# Removed db.models import - now working with dict data
 
 
 class OpenAIService:
@@ -14,12 +14,12 @@ class OpenAIService:
         """Initialize OpenAI client."""
         self.client = AsyncOpenAI(api_key=settings.openai_api_key)
     
-    async def generate_species_report(self, users: List[User]) -> str:
+    async def generate_species_report(self, users: List[dict]) -> str:
         """
         Generate a daily Species Report based on user and bot data.
         
         Args:
-            users: List of User objects with their bots
+            users: List of user dicts with their bots
             
         Returns:
             Generated report text
@@ -63,28 +63,28 @@ class OpenAIService:
             logger.error(f"Error generating Species Report: {e}")
             return self._get_fallback_report()
     
-    def _prepare_ecosystem_data(self, users: List[User]) -> dict:
+    def _prepare_ecosystem_data(self, users: List[dict]) -> dict:
         """Prepare ecosystem data for the prompt."""
         total_users = len(users)
-        total_bots = sum(len(user.bots) for user in users)
+        total_bots = sum(len(user.get('bots', [])) for user in users)
         
         # Collect bot categories
         bot_purposes = []
         user_interests = []
         
         for user in users:
-            if user.interests:
-                user_interests.append(user.interests)
-            for bot in user.bots:
-                if bot.bot_purpose:
-                    bot_purposes.append(bot.bot_purpose)
+            if user.get('interests'):
+                user_interests.append(user['interests'])
+            for bot in user.get('bots', []):
+                if bot.get('bot_purpose'):
+                    bot_purposes.append(bot['bot_purpose'])
         
         return {
             "total_users": total_users,
             "total_bots": total_bots,
             "bot_purposes": bot_purposes[:10],  # Limit to 10 examples
             "user_interests": user_interests[:10],  # Limit to 10 examples
-            "active_users": len([u for u in users if u.bots])
+            "active_users": len([u for u in users if u.get('bots')])
         }
     
     def _create_report_prompt(self, data: dict) -> str:

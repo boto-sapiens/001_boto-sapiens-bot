@@ -6,7 +6,7 @@ from aiogram import Bot
 from loguru import logger
 
 from bot.config import settings
-from db.repository import UserRepository
+from services.api_repository import ApiUserRepository
 from services.openai_service import OpenAIService
 
 
@@ -20,7 +20,7 @@ async def send_daily_report(bot: Bot) -> None:
     
     try:
         # Get all users with their bots
-        users = await UserRepository.get_all_users()
+        users = await ApiUserRepository.get_all_users()
         
         if not users:
             logger.warning("No users found, skipping report generation")
@@ -36,13 +36,13 @@ async def send_daily_report(bot: Bot) -> None:
         for user in users:
             try:
                 await bot.send_message(
-                    chat_id=user.telegram_id,
+                    chat_id=user.get('telegram_id'),
                     text=f"🧬 **Daily Species Report**\n\n{report}",
                     parse_mode="Markdown"
                 )
                 sent_count += 1
             except Exception as e:
-                logger.error(f"Failed to send report to user {user.telegram_id}: {e}")
+                logger.error(f"Failed to send report to user {user.get('telegram_id')}: {e}")
                 failed_count += 1
         
         logger.success(

@@ -7,7 +7,7 @@ from loguru import logger
 
 from bot.config import settings
 from bot import dependencies
-from db.database import init_db, close_db
+# Removed database imports - now using Symfony API exclusively
 from handlers import user_router
 from scheduler import setup_scheduler, shutdown_scheduler
 from services.symfony_api import SymfonyAPI
@@ -33,8 +33,7 @@ async def on_startup(bot: Bot) -> None:
     """Execute on bot startup."""
     logger.info("🧬 boto-sapiens is starting up...")
     
-    # Initialize database
-    await init_db()
+    # Database initialization removed - using Symfony API exclusively
     
     # Initialize Symfony API client
     symfony_api = SymfonyAPI(settings.symfony_api_url)
@@ -59,8 +58,7 @@ async def on_shutdown() -> None:
     if symfony_api:
         await symfony_api.close()
     
-    # Close database connections
-    await close_db()
+    # Database connections removed - using Symfony API exclusively
     
     logger.success("✅ Bot shutdown completed")
 

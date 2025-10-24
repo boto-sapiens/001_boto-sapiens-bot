@@ -1,35 +1,12 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: boto-postgres
-    environment:
-      POSTGRES_DB: boto_sapiens
-      POSTGRES_USER: boto
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U boto -d boto_sapiens"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   bot:
     build: .
     container_name: boto-sapiens
     env_file:
       - .env
-    depends_on:
-      postgres:
-        condition: service_healthy
     volumes:
       - ./logs:/app/logs
     restart: unless-stopped
-
-volumes:
-  postgres_data:
 

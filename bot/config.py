@@ -12,8 +12,7 @@ class Settings(BaseSettings):
     # Telegram Bot
     bot_token: str
     
-    # Database
-    database_url: str
+    # Database removed - using Symfony API exclusively
     
     # OpenAI (Base64 encoded)
     openai_api_key_base64: str

@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from loguru import logger
 
-from db.repository import UserRepository, BotRepository
+from services.api_repository import ApiUserRepository, ApiBotRepository
 from bot.dependencies import get_symfony_api, get_bot
 from services.telegram_publisher import TelegramPublisher
 from services.openai_service import OpenAIService
@@ -34,7 +34,7 @@ class BotRegistrationStates(StatesGroup):
 @router.message(CommandStart())
 async def cmd_start(message: Message) -> None:
     """Handle /start command."""
-    user = await UserRepository.get_by_telegram_id(message.from_user.id)
+    user = await ApiUserRepository.get_by_telegram_id(message.from_user.id)
     symfony_api = get_symfony_api()
     
     if user:
@@ -57,8 +57,8 @@ async def cmd_start(message: Message) -> None:
             "/help - Помощь"
         )
     else:
-        # Create new user in local DB
-        await UserRepository.create(
+        # Create new user via API
+        await ApiUserRepository.create(
             telegram_id=message.from_user.id,
             username=message.from_user.username,
             full_name=message.from_user.full_name or "Пользователь"
@@ -113,7 +113,7 @@ async def process_interests(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
     bio = data.get("bio")
     
-    await UserRepository.update_profile(
+    await ApiUserRepository.update_profile(
         telegram_id=message.from_user.id,
         bio=bio,
         interests=message.text
@@ -180,8 +180,8 @@ async def process_bot_purpose(message: Message, state: FSMContext) -> None:
     
     symfony_api = get_symfony_api()
     
-    # Save bot to local database
-    bot_record = await BotRepository.create(
+    # Save bot via API
+    bot_record = await ApiBotRepository.create(
         owner_telegram_id=message.from_user.id,
         bot_name=data["bot_name"],
         bot_username=data.get("bot_username"),
@@ -204,7 +204,7 @@ async def process_bot_purpose(message: Message, state: FSMContext) -> None:
     
     # Store complete bot data in state for callback handlers
     await state.update_data(
-        bot_id=bot_record.id,
+        bot_id=bot_record.get('id') if bot_record else None,
         bot_purpose=message.text,
         creator_name=message.from_user.full_name or message.from_user.username or "Anonymous"
     )
@@ -212,8 +212,8 @@ async def process_bot_purpose(message: Message, state: FSMContext) -> None:
     # Show confirmation dialog for chronicle publishing
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="✅ Yes", callback_data=f"publish_yes:{bot_record.id}"),
-            InlineKeyboardButton(text="❌ No", callback_data=f"publish_no:{bot_record.id}")
+            InlineKeyboardButton(text="✅ Yes", callback_data=f"publish_yes:{bot_record.get('id') if bot_record else 'unknown'}"),
+            InlineKeyboardButton(text="❌ No", callback_data=f"publish_no:{bot_record.get('id') if bot_record else 'unknown'}")
         ]
     ])
     
@@ -322,7 +322,7 @@ async def process_publish_declined(callback: CallbackQuery, state: FSMContext) -
 @router.message(Command("my_bots"))
 async def cmd_my_bots(message: Message) -> None:
     """Show user's bots."""
-    bots = await BotRepository.get_by_owner(message.from_user.id)
+    bots = await ApiBotRepository.get_by_owner(message.from_user.id)
     
     if not bots:
         await message.answer(
@@ -333,11 +333,11 @@ async def cmd_my_bots(message: Message) -> None:
     
     response = "🤖 Ваши боты:\n\n"
     for i, bot in enumerate(bots, 1):
-        response += f"{i}. {bot.bot_name}"
-        if bot.bot_username:
-            response += f" ({bot.bot_username})"
-        response += f"\n   📝 {bot.bot_description}\n"
-        response += f"   🎯 Цель: {bot.bot_purpose}\n\n"
+        response += f"{i}. {bot.get('bot_name', 'Unknown')}"
+        if bot.get('bot_username'):
+            response += f" ({bot['bot_username']})"
+        response += f"\n   📝 {bot.get('bot_description', 'No description')}\n"
+        response += f"   🎯 Цель: {bot.get('bot_purpose', 'No purpose specified')}\n\n"
     
     await message.answer(response)
 
