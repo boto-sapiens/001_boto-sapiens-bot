@@ -5,7 +5,15 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from loguru import logger
 
-from bot.config import settings
+# Import and decode OpenAI key FIRST, before any modules that depend on it
+from bot.config import settings, decode_openai_key
+
+# Decode OpenAI API key before importing modules that use it
+if not decode_openai_key():
+    logger.critical("❌ Failed to decode OpenAI API key. Bot cannot start.")
+    sys.exit(1)
+
+# Now import modules that depend on OPENAI_API_KEY environment variable
 from bot import dependencies
 # Removed database imports - now using Symfony API exclusively
 from handlers import user_router

@@ -1,9 +1,9 @@
 """OpenAI service for generating Species Reports."""
+import os
 from typing import List, Optional
 import openai
 from loguru import logger
 
-from bot.config import settings
 # Removed db.models import - now working with dict data
 
 # Model configuration
@@ -15,7 +15,11 @@ class OpenAIService:
     
     def __init__(self):
         """Initialize OpenAI client."""
-        openai.api_key = settings.openai_api_key
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY environment variable not found. Make sure decode_openai_key() was called.")
+        
+        openai.api_key = api_key
         self.client = openai.AsyncClient()
     
     async def generate_species_report(self, users: List[dict]) -> str:
