@@ -1,10 +1,13 @@
 """OpenAI service for generating Species Reports."""
 from typing import List, Optional
-from openai import AsyncOpenAI
+import openai
 from loguru import logger
 
 from bot.config import settings
 # Removed db.models import - now working with dict data
+
+# Model configuration
+DEFAULT_MODEL = "gpt-4o-mini"
 
 
 class OpenAIService:
@@ -12,7 +15,8 @@ class OpenAIService:
     
     def __init__(self):
         """Initialize OpenAI client."""
-        self.client = AsyncOpenAI(api_key=settings.openai_api_key)
+        openai.api_key = settings.openai_api_key
+        self.client = openai.AsyncClient()
     
     async def generate_species_report(self, users: List[dict]) -> str:
         """
@@ -34,16 +38,17 @@ class OpenAIService:
         
         try:
             response = await self.client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=DEFAULT_MODEL,
                 messages=[
                     {
                         "role": "system",
                         "content": (
-                            "Ты - научный исследователь цифровой экосистемы Telegram ботов. "
-                            "Твоя задача - создавать ежедневные отчёты о состоянии 'видов' "
-                            "(ботов и их создателей) в этой экосистеме. Пиши креативно, "
-                            "используя биологические метафоры, но оставаясь информативным. "
-                            "Отчёт должен быть интересным и вдохновляющим."
+                            "You are a scientific researcher of the digital ecosystem of Telegram bots. "
+                            "Your task is to create daily reports about the state of 'species' "
+                            "(bots and their creators) in this ecosystem. Write creatively, "
+                            "using biological metaphors while remaining informative. "
+                            "The report should be interesting and inspiring. "
+                            "Use fantasy/scientific tone with Botopia lore style - poetic but structured."
                         )
                     },
                     {
@@ -90,43 +95,44 @@ class OpenAIService:
     def _create_report_prompt(self, data: dict) -> str:
         """Create the prompt for Species Report generation."""
         prompt = f"""
-Создай ежедневный Species Report для экосистемы Telegram ботов.
+Create a daily Species Report for the Telegram bot ecosystem.
 
-📊 Данные экосистемы:
-- Всего исследователей (пользователей): {data['total_users']}
-- Всего цифровых видов (ботов): {data['total_bots']}
-- Активных создателей: {data['active_users']}
+📊 Ecosystem Data:
+- Total researchers (users): {data['total_users']}
+- Total digital species (bots): {data['total_bots']}
+- Active creators: {data['active_users']}
 
-🎯 Примеры целей ботов в экосистеме:
+🎯 Examples of bot purposes in the ecosystem:
 {self._format_list(data['bot_purposes'])}
 
-💡 Интересы исследователей:
+💡 Researcher interests:
 {self._format_list(data['user_interests'])}
 
-Создай отчёт, который:
-1. Использует биологические метафоры для описания экосистемы
-2. Анализирует разнообразие "видов" (типов ботов)
-3. Отмечает интересные паттерны и тренды
-4. Вдохновляет на создание новых ботов
-5. Содержит интересные инсайты
+Create a report that:
+1. Uses biological metaphors to describe the ecosystem
+2. Analyzes the diversity of "species" (types of bots)
+3. Notes interesting patterns and trends
+4. Inspires the creation of new bots
+5. Contains interesting insights
 
-Используй эмодзи для наглядности. Сделай отчёт живым и интересным!
+Use emojis for clarity. Make the report lively and interesting!
+Use fantasy/scientific tone with Botopia lore - poetic but structured.
 """
         return prompt
     
     def _format_list(self, items: List[str]) -> str:
         """Format list of items for the prompt."""
         if not items:
-            return "- Нет данных"
+            return "- No data available"
         return "\n".join(f"- {item}" for item in items)
     
     def _get_fallback_report(self) -> str:
         """Get fallback report in case of error."""
         return (
-            "🧬 Species Report - Ежедневный отчёт\n\n"
-            "К сожалению, сегодня возникли технические трудности при генерации "
-            "полного отчёта. Наша цифровая экосистема продолжает развиваться!\n\n"
-            "🌱 Продолжайте создавать удивительных ботов!"
+            "🧬 Species Report - Daily Report\n\n"
+            "Unfortunately, technical difficulties arose today while generating "
+            "the full report. Our digital ecosystem continues to evolve!\n\n"
+            "🌱 Continue creating amazing bots!"
         )
     
     async def generate_single_species_chronicle(
@@ -170,7 +176,7 @@ Make it unique, imaginative, and memorable. Infer the bot's "Class" from its des
         
         try:
             response = await self.client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=DEFAULT_MODEL,
                 messages=[
                     {
                         "role": "system",
