@@ -89,8 +89,13 @@ async def main() -> None:
     
     try:
         # Start polling
+        # Note: We explicitly allow ALL updates to process messages from other bots (FilevskiyBot)
         logger.info("📡 Starting polling...")
-        await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+        await dp.start_polling(
+            bot, 
+            allowed_updates=["message", "callback_query", "channel_post"],
+            drop_pending_updates=False
+        )
     except Exception as e:
         logger.error(f"❌ Error during polling: {e}")
         raise

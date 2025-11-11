@@ -3,10 +3,18 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: boto-sapiens
+    image: boto-chronicler-bot:latest
+    container_name: boto-chronicler-bot
     env_file:
-      - .env
+      - .env  # Для DEV - используйте .env, для PROD - .env.prod
     volumes:
       - ./logs:/app/logs
-    restart: always
-    command: ["python", "bot/main.py"]
+    restart: unless-stopped  # Автоматический перезапуск в случае сбоев
+    environment:
+      - INSIDE_DOCKER=1
+    # command is now from Dockerfile (./start_with_arena.sh)
+    # Для PROD раскомментируйте следующие строки:
+    # environment:
+    #   - LOG_LEVEL=WARNING
+    #   - REPORT_TIME=09:00
+    #   - TIMEZONE=UTC

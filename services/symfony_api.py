@@ -16,6 +16,39 @@ class SymfonyAPI:
         """
         self.base_url = base_url.rstrip('/')
         self._session: Optional[aiohttp.ClientSession] = None
+        
+        # Log base URL for debugging
+        logger.info(f"🔗 Symfony API base_url: {self.base_url}")
+        
+        # Validate base URL format
+        self._validate_base_url()
+    
+    def _validate_base_url(self) -> None:
+        """
+        Validate base URL format and warn about incorrect endings.
+        """
+        # Check for common incorrect endings
+        incorrect_endings = ['/user', '/bot', '/api/telegram/user', '/api/telegram/bot']
+        
+        for ending in incorrect_endings:
+            if self.base_url.endswith(ending):
+                logger.warning(
+                    f"⚠️  Symfony API base_url ends with '{ending}' - this may cause issues!\n"
+                    f"   Expected format: http://host:port/api/telegram\n"
+                    f"   Current URL: {self.base_url}\n"
+                    f"   Please check your SYMFONY_API_URL in .env file"
+                )
+                break
+        
+        # Check if URL looks correct
+        if not self.base_url.endswith('/api/telegram'):
+            logger.warning(
+                f"⚠️  Symfony API base_url doesn't end with '/api/telegram'\n"
+                f"   Current URL: {self.base_url}\n"
+                f"   Expected format: http://host:port/api/telegram"
+            )
+        else:
+            logger.success(f"✅ Symfony API base_url format is correct: {self.base_url}")
     
     async def _get_session(self) -> aiohttp.ClientSession:
         """Get or create aiohttp session."""
@@ -49,6 +82,77 @@ class SymfonyAPI:
         except Exception as e:
             logger.warning(f"Unexpected error during Symfony API ping: {e}")
             return False
+    
+    async def test_api_connection(self) -> dict:
+        """
+        Test API connection with detailed response analysis.
+        
+        Returns:
+            Dict with connection status and details
+        """
+        try:
+            session = await self._get_session()
+            test_url = f"{self.base_url}/user/12345"  # Test with dummy ID
+            
+            async with session.get(test_url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                content_type = response.headers.get('content-type', '')
+                is_json = 'application/json' in content_type
+                
+                if response.status == 404:
+                    # 404 is expected for non-existent user, but we want JSON response
+                    try:
+                        data = await response.json()
+                        return {
+                            "status": "success",
+                            "message": "API is reachable and returns JSON",
+                            "status_code": response.status,
+                            "content_type": content_type,
+                            "is_json": is_json,
+                            "response_sample": str(data)[:200] + "..." if len(str(data)) > 200 else str(data)
+                        }
+                    except Exception:
+                        return {
+                            "status": "warning",
+                            "message": "API is reachable but doesn't return JSON",
+                            "status_code": response.status,
+                            "content_type": content_type,
+                            "is_json": is_json
+                        }
+                elif response.status == 200:
+                    data = await response.json()
+                    return {
+                        "status": "success",
+                        "message": "API is reachable and returns JSON",
+                        "status_code": response.status,
+                        "content_type": content_type,
+                        "is_json": is_json,
+                        "response_sample": str(data)[:200] + "..." if len(str(data)) > 200 else str(data)
+                    }
+                else:
+                    return {
+                        "status": "error",
+                        "message": f"Unexpected status code: {response.status}",
+                        "status_code": response.status,
+                        "content_type": content_type,
+                        "is_json": is_json
+                    }
+                    
+        except aiohttp.ClientError as e:
+            return {
+                "status": "error",
+                "message": f"Network error: {str(e)}",
+                "status_code": None,
+                "content_type": None,
+                "is_json": False
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Unexpected error: {str(e)}",
+                "status_code": None,
+                "content_type": None,
+                "is_json": False
+            }
     
     async def upsert_user(self, telegram_id: str, username: Optional[str] = None) -> dict:
         """
@@ -423,17 +527,21 @@ async def test_symfony_api():
     api = SymfonyAPI("http://127.0.0.1:8000/api/telegram")
     
     try:
+        # Test connection with detailed analysis
+        connection_test = await api.test_api_connection()
+        print(f"🔗 API Connection Test: {connection_test}")
+        
         # Test ping
         is_alive = await api.ping()
-        print(f"API Alive: {is_alive}")
+        print(f"🏥 API Health Check: {is_alive}")
         
         # Test user upsert
         user_result = await api.upsert_user("999888777", "test_user")
-        print(f"Upsert User: {user_result}")
+        print(f"👤 Upsert User: {user_result}")
         
         # Test bot addition
         bot_result = await api.add_bot("999888777", "@dream_bot", "Experimental AI creature")
-        print(f"Add Bot: {bot_result}")
+        print(f"🤖 Add Bot: {bot_result}")
         
     finally:
         await api.close()

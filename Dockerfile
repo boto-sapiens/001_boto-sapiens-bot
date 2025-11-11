@@ -3,6 +3,7 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
+ENV INSIDE_DOCKER=1
 
 WORKDIR /app
 
@@ -17,4 +18,8 @@ COPY . .
 
 RUN mkdir -p logs
 
-CMD ["python", "bot/main.py"]
+# Make start script executable
+COPY start_with_arena.sh .
+RUN chmod +x start_with_arena.sh
+
+CMD ["./start_with_arena.sh"]

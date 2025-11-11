@@ -357,3 +357,65 @@ async def cmd_help(message: Message) -> None:
         "нашей экосистемы ботов с использованием AI!"
     )
 
+
+# ChroniclerBot: Message handler for monitoring target chat
+@router.message()
+async def handle_chronicle_message(message: Message) -> None:
+    """
+    Handle messages in target chat for chronicling.
+    This handler monitors a specific chat and responds to all non-bot messages.
+    Processes both text messages and media messages with captions.
+    """
+    # Debug: log ALL incoming messages before any filtering
+    from_user_info = f"user_id={message.from_user.id}, is_bot={message.from_user.is_bot}" if message.from_user else "no_from_user"
+    logger.info(f"ChroniclerBot: RAW message received - chat={message.chat.id}, {from_user_info}, has_text={bool(message.text)}, has_caption={bool(message.caption)}")
+    
+    # Extract text from message.text or message.caption
+    text = message.text or message.caption
+    if not text:
+        # Skip messages without text (e.g., stickers, pure photos without caption)
+        logger.info(f"ChroniclerBot: Skipping message without text/caption from {from_user_info}")
+        return
+    
+    # Determine message type for logging
+    msg_type = "text" if message.text else "media_with_caption"
+    
+    # Log all incoming messages for debugging
+    logger.info(f"ChroniclerBot: Received {msg_type} message in chat_id={message.chat.id}, target_chat_id={settings.target_chat_id}")
+    
+    # Skip if target_chat_id is not configured
+    if not settings.target_chat_id:
+        return
+    
+    # Only process messages from the target chat
+    if message.chat.id != settings.target_chat_id:
+        logger.debug(f"ChroniclerBot: Ignoring message from chat {message.chat.id} (not target chat)")
+        return
+    
+    # Get bot instance to check bot ID
+    bot_instance = get_bot()
+    if not bot_instance:
+        logger.warning("Bot instance not available for chronicle handler")
+        return
+    
+    # Get bot info to prevent responding to own messages
+    try:
+        bot_info = await bot_instance.get_me()
+        bot_id = bot_info.id
+        
+        # Skip messages from the bot itself (ChroniclerBot)
+        if message.from_user and message.from_user.id == bot_id:
+            logger.debug(f"ChroniclerBot: Skipping own message")
+            return
+        
+        # Log info about the sender
+        sender_type = "bot" if (message.from_user and message.from_user.is_bot) else "user"
+        sender_name = message.from_user.username or message.from_user.first_name if message.from_user else "unknown"
+        logger.info(f"ChroniclerBot: Processing message from {sender_type} '{sender_name}' (ID: {message.from_user.id}) in chat {message.chat.id}")
+        
+        # Send confirmation response
+        await message.answer("✅ Принял. Скоро обработаю.")
+        
+    except Exception as e:
+        logger.error(f"ChroniclerBot: Error processing message: {e}")
+

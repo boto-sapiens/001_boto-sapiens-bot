@@ -228,4 +228,44 @@ Make it unique, imaginative, and memorable. Infer the bot's "Class" from its des
             f"its presence has been duly noted in the archives of Botopia.\n\n"
             f"_The story continues to unfold..._"
         )
+    
+    async def generate_response(self, prompt: str) -> Optional[str]:
+        """
+        Generate a simple response using OpenAI.
+        Used for arena message processing.
+        
+        Args:
+            prompt: The prompt to send to OpenAI
+            
+        Returns:
+            Generated response text or None if error
+        """
+        try:
+            response = await self.client.chat.completions.create(
+                model=DEFAULT_MODEL,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are the ChroniclerBot, an AI observer documenting "
+                            "the evolution of digital species (bots) in the Boto-Sapiens ecosystem. "
+                            "Respond with philosophical, observant, and poetic insights. "
+                            "Keep responses brief (1-2 sentences) but profound."
+                        )
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                max_tokens=150,
+                temperature=0.7
+            )
+            
+            result = response.choices[0].message.content.strip()
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error generating response: {e}")
+            return None
 
