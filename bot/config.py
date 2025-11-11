@@ -28,11 +28,6 @@ class Settings(BaseSettings):
     # Target Chat ID for message monitoring (ChroniclerBot)
     target_chat_id: Optional[int] = None
     
-    # Arena Relay Bot configuration
-    arena_url: str = "http://arena-relay-bot:8000"
-    arena_enabled: bool = True
-    arena_webhook_port: int = 8001
-    
     # Scheduler
     report_time: str = "09:00"
     timezone: str = "UTC"

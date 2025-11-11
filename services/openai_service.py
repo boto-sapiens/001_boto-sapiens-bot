@@ -232,7 +232,7 @@ Make it unique, imaginative, and memorable. Infer the bot's "Class" from its des
     async def generate_response(self, prompt: str) -> Optional[str]:
         """
         Generate a simple response using OpenAI.
-        Used for arena message processing.
+        Used for message processing.
         
         Args:
             prompt: The prompt to send to OpenAI
